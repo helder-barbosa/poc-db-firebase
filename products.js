@@ -29,6 +29,27 @@ const init = database => {
     })
   }
 
+  const findAllByCategory = async (categoryId) => {
+    const dbConn = await db.initDB(database)
+    // return await db.query(dbConn, `select * from products left join images on products.id = images.product_id group by images.product_id`)
+    const products = await db.query(dbConn, `select * from products where id in (select product_id from categories_products where category_id = ${categoryId})`)
+    const condition = products.map(produto => produto.id).join(',')
+    const images = await db.query(dbConn, 'select * from images where product_id in (' + condition + ') group by product_id')
+    const mapImages = images.reduce((antigo, atual) => {
+      return {
+        ...antigo,
+        [atual.product_id]: atual
+      }
+    }, {})
+    return products.map(product => {
+      return {
+        ...product,
+        image: mapImages[product.id]
+      }
+    })
+  }
+
+
   const remove = async (id) => {
     const dbConn = await db.initDB(database)
     await db.queryWithParams(dbConn, `delete from products where id=?`, [id])
@@ -39,6 +60,14 @@ const init = database => {
   const update = async (id, data) => {
     const dbConn = await db.initDB(database)
     await db.queryWithParams(dbConn, `update products set product=?, price=? where id=?`, [...data, id])
+  }
+
+  const updateCategories = async (id, categories) => {
+    const dbConn = await db.initDB(database)
+    await db.queryWithParams(dbConn, `delete from categories_products where product_id = ?`, [id])
+    for await (const category of categories) {
+      await db.queryWithParams(dbConn, `insert into categories_products (product_id, category_id ) values (?, ?)`, [id, category])
+    }
   }
 
   const addImage = async (productId, data) => {
@@ -73,7 +102,7 @@ const init = database => {
       hasNext
     }
   }
-  return { findAllPaginated, update, remove, findAll, create, addImage }
+  return { findAllPaginated, update, remove, findAll, create, addImage, updateCategories, findAllByCategory }
 }
 
 module.exports = init

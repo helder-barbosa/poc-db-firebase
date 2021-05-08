@@ -17,10 +17,9 @@ const test = async () => {
     await products.create([4, 'test', 55])
     await products.addImage(4, [4, 'url', 'descript'])
  */
-
-  console.log(await products.findAll())
-  console.log('cp: 0', await products.findAllPaginated({ pageSize: 2, currentPage: 1 }))
-
+  //console.log('cp: 0', await products.findAllPaginated({ pageSize: 2, currentPage: 1 }))
+  //await products.updateCategories(1, [1])
+  console.log(await products.findAllByCategory(1))
 }
 
 test()
